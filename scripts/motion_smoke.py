@@ -1,4 +1,4 @@
-"""Exercise cursor, button and navigation motion using only local account fixtures.
+"""Exercise click sparks and navigation motion using only local account fixtures.
 
 The wave shader has its own background_smoke.py suite. Here WebGL is unavailable
 on purpose, so the 2D pointer/UI checks also cover the static-background fallback.
@@ -100,21 +100,16 @@ with sync_playwright() as playwright:
     expect(page.locator("canvas.pointer-effects")).to_have_attribute("aria-hidden", "true")
     assert page.locator("canvas.pointer-effects").evaluate("element => getComputedStyle(element).pointerEvents") == "none"
 
-    # The blue cursor trail is visible, expires after the requested linger, and
-    # never creates a permanent render loop when the pointer is stationary.
+    # Moving the ordinary cursor must never paint a trail or keep an effect loop.
     page.mouse.move(680, 160)
     page.mouse.move(860, 180, steps=8)
-    page.wait_for_function(PAINTED)
-    assert page.locator("canvas.pointer-effects").evaluate("""canvas => {
-      const pixels = canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
-      for (let i=0;i<pixels.length;i+=4)
-        if (pixels[i+3]>0 && pixels[i+2]>pixels[i] && pixels[i+2]>pixels[i+1]) return true;
-      return false;
-    }"""), "Cursor glow did not use the supplied blue color"
+    page.evaluate("""() => new Promise(resolve => requestAnimationFrame(
+      () => requestAnimationFrame(resolve)))""")
+    assert not page.evaluate(PAINTED), "Mouse movement still painted a cursor trail"
     no_pointer_pixels(page)
     no_pending_frames(page)
 
-    # Pointer-free click dispatch isolates click sparks from the cursor trail.
+    # Clicks still produce the existing visible button sparks.
     role = page.locator('[data-action="loginRole"][data-role="teacher"]')
     box = role.bounding_box()
     role.dispatch_event("click", {"clientX": box["x"]+box["width"]/2, "clientY": box["y"]+box["height"]/2, "detail": 1})
@@ -160,7 +155,7 @@ with sync_playwright() as playwright:
     no_pointer_pixels(page)
     page.mouse.move(700, 150)
     page.mouse.move(900, 160, steps=6)
-    assert not page.evaluate(PAINTED), "Paused cursor still painted"
+    assert not page.evaluate(PAINTED), "Paused pointer effects still painted"
     page.locator('[data-action="loginRole"][data-role="teacher"]').click()
     finished(page)
     assert not page.evaluate("document.getAnimations().some(animation=>animation.playState==='running')")
@@ -226,7 +221,7 @@ with sync_playwright() as playwright:
     page.mouse.move(700,150)
     page.mouse.move(850,170,steps=6)
     page.locator('[data-action="loginRole"][data-role="teacher"]').click()
-    assert not page.evaluate(PAINTED), "Reduced motion still showed cursor/sparks"
+    assert not page.evaluate(PAINTED), "Reduced motion still showed pointer effects"
     assert not page.evaluate("document.getAnimations().some(animation=>animation.playState==='running')")
     no_pending_frames(page)
     assert not errors, errors
@@ -236,7 +231,7 @@ with sync_playwright() as playwright:
     finished(page)
     page.mouse.move(150,150)
     page.mouse.move(280,170,steps=6)
-    assert not page.evaluate(PAINTED), "A touch device received the hover cursor glow"
+    assert not page.evaluate(PAINTED), "Pointer movement painted an unwanted trail on touch"
     role=page.locator('[data-action="loginRole"][data-role="teacher"]')
     box=role.bounding_box()
     page.touchscreen.tap(box["x"]+box["width"]/2,box["y"]+box["height"]/2)
@@ -250,4 +245,4 @@ with sync_playwright() as playwright:
     assert not requests, requests
     context.close()
     browser.close()
-    print("PASS: blue cursor trail and idle cleanup; button sparks; bounded mouse-only magnets; keyboard navigation; page/list entrances; pause and reduced motion; both themes; no real account requests")
+    print("PASS: standard cursor without a trail; click sparks and idle cleanup; bounded mouse-only magnets; keyboard navigation; page/list entrances; pause and reduced motion; both themes; no real account requests")
