@@ -388,23 +388,12 @@ with sync_playwright() as playwright:
     page.locator('.side-nav').get_by_role('button', name='Salir', exact=True).click()
     expect(page.locator('html')).to_have_attribute('data-theme', 'dark')
 
-    # A recovery failure must remain a failure, with no simulated delivery.
-    page.get_by_role('button', name='Olvidé mi contraseña').click()
-    page.locator('[name="username"]').fill(STUDENT_NUMBER)
-    state['recovery_error'] = True
-    page.get_by_role('button', name='Solicitar enlace de recuperación').click()
-    expect(page.locator('#recovery-status')).to_have_text('SMTP de prueba no disponible')
-    state['recovery_error'] = False
-    page.get_by_role('button', name='Solicitar enlace de recuperación').click()
-    page.get_by_text('Solicitud recibida.', exact=False).wait_for()
-    status = page.locator('#recovery-status').inner_text()
-    assert 'Si la cuenta existe y el correo está habilitado' in status
-    recoveries = [r for r in requests if r['path'] == '/auth/v1/recover']
-    assert len(recoveries) == 2 and all(r['body']['email'] == EMAIL for r in recoveries)
-    assert not [r for r in requests if r['path'].endswith('/publish_assessment') or r['path'].endswith('/manage-students')], 'Student phase performed a teacher write'
+    # No email recovery entry point or outbound recovery request.
+    expect(page.get_by_role('button', name='Olvidé mi contraseña')).to_have_count(0)
+    assert not [r for r in requests if r['path'] == '/auth/v1/recover']
+    assert not [r for r in requests if r['path'].endswith('/publish_assessment') or r['path'].endswith('/manage-students')]
 
     # A validated teacher can inspect a closed bank without attempts or writes.
-    page.get_by_role('button', name='Volver al acceso').click()
     state['teacher_mode'] = True
     page.locator('#username').fill(STUDENT_NUMBER)
     page.locator('#password').fill('ClaveTemporalDePrueba')
@@ -637,5 +626,5 @@ with sync_playwright() as playwright:
     assert 'Antes de entrar, cambia la clave temporal' in page.locator('main').inner_text()
     assert not errors, errors
     assert not [r for r in requests if r['path'].endswith('/publish_assessment')]
-    print('PASS: isolated live Auth; practice/exam enrollment, calendar and quota guards; exam/review case without teaching or resources; server grading and recovery; manual pending/email/UUID persistence; invalid/duplicate/HTTP/row failures visible; cleared stale Excel preview, partial import and failed-only retry; uncertain committed response reconciled without duplicate POST; new account must change cédula password; no JS errors')
+    print('PASS: isolated live Auth; practice/exam enrollment, calendar and quota guards; exam/review case without teaching or resources; server grading and disabled email recovery; manual pending/email/UUID persistence; invalid/duplicate/HTTP/row failures visible; cleared stale Excel preview, partial import and failed-only retry; uncertain committed response reconciled without duplicate POST; new account must change cédula password; no JS errors')
     browser.close()

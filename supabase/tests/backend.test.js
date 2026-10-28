@@ -151,24 +151,11 @@ test("assessed questions and scoring go to server RPC, preserving typed answers"
   });
 });
 
-test("recover requests institutional mail and allowed HTTPS redirect, without claiming delivery", async () => {
-  const h = await harness(() => ({ body: {} }));
-  assert.equal(await h.backend.recover(fixtureId), undefined);
-  assert.equal(h.requests[0].body.email, `e${fixtureId}@live.uleam.edu.ec`);
-  assert.equal(
-    new URL(h.requests[0].url).searchParams.get("redirect_to"),
-    "https://aula.example.edu/SIGIN/",
-  );
-});
-
-test("recovery consumes fragment tokens and validates the recovered identity", async () => {
+test("email recovery and invitation handlers are unavailable", async () => {
   const h = await harness(identity);
-  location.hash =
-    "#type=recovery&access_token=recovery-access&refresh_token=recovery-refresh&expires_in=3600";
-  assert.equal(await h.backend.handleRecovery(), true);
-  assert.equal(location.hash, "");
-  assert.equal(h.requests[0].headers.Authorization, "Bearer recovery-access");
-  assert.ok(h.data.has("sigin-auth-session-v1"));
+  assert.equal(h.backend.recover, undefined);
+  assert.equal(h.backend.handleRecovery, undefined);
+  assert.equal(h.requests.length, 0);
 });
 
 test("expired sessions refresh once for simultaneous requests", async () => {

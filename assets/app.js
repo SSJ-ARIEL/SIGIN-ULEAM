@@ -120,7 +120,6 @@ const publicActions = new Set([
   "loginRole",
   "showPassword",
   "login",
-  "recover",
   "preview",
   "logout",
   "settings",
@@ -241,7 +240,7 @@ function login(error = "") {
   liveWorkspaceReady = false;
   quiz = null;
   route = "login";
-  app.innerHTML = `${guestHeader()}<main class="landing" id="main" tabindex="-1"><section class="landing-story" aria-labelledby="landing-title"><div class="landing-copy"><span class="eyebrow">Un espacio para tu curiosidad</span><h1 id="landing-title">Lo que aprendes hoy<br><em>abre caminos mañana.</em></h1><p>No necesitas tener todas las respuestas para empezar. Observa, pregunta y vuelve a intentarlo: cada idea que comprendes cambia la forma en que ves el mundo.</p><div class="landing-values"><span>${icon("book")} Explora con calma</span><span>${icon("spark")} Aprende haciendo</span></div></div><figure class="learning-landscape" aria-label="Un paisaje tranquilo con naturaleza y un espacio de estudio"><img src="assets/images/learning-landscape.webp" alt="Ilustración de un espacio de estudio abierto a un paisaje de montañas, árboles y cielo claro" loading="eager" fetchpriority="high" onerror="this.hidden=true"><figcaption>Haz espacio para una idea nueva.</figcaption></figure></section><section class="landing-login" aria-labelledby="login-title"><div class="login-panel"><span class="eyebrow">Tu espacio de aprendizaje</span><h2 id="login-title">Bienvenido a tu aula.</h2><p class="muted">Continúa tu camino. Estamos para acompañarte.</p><div class="role-switch" aria-label="Tipo de acceso">${button("loginRole", "Estudiante", `data-role="student" aria-pressed="${loginRole === "student"}" class="${loginRole === "student" ? "active" : ""}"`)}${button("loginRole", "Docente", `data-role="teacher" aria-pressed="${loginRole === "teacher"}" class="${loginRole === "teacher" ? "active" : ""}"`)}</div><form id="login-form"><label for="username">${loginRole === "teacher" ? "Usuario docente" : "Número de cédula"}</label><input id="username" name="username" autocomplete="username" ${loginRole === "student" ? 'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"' : 'value="DocenteULEAM"'} required placeholder="${loginRole === "student" ? "Tu cédula de diez dígitos" : "Usuario"}"><label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required>${button("showPassword", icon("eye"), 'aria-label="Mostrar contraseña"')}</div><p class="error" id="login-error" role="alert">${escape(error)}</p><button type="submit" class="primary full">Entrar a mi aula ${icon("arrow")}</button></form>${button("recover", "Olvidé mi contraseña", 'class="link full"')}<p class="login-help">${icon("shield")}${backendConfigured ? "Ingresa con tu cuenta institucional registrada." : "Tu aula estará disponible al conectar las cuentas institucionales."}</p>${APP_CONFIG.previewEnabled ? button("preview", "Explorar las tres materias", 'class="full"') : ""}</div><p class="landing-signoff">Aprender lleva tiempo. Cada paso cuenta.</p></section></main>`;
+  app.innerHTML = `${guestHeader()}<main class="landing" id="main" tabindex="-1"><section class="landing-story" aria-labelledby="landing-title"><div class="landing-copy"><span class="eyebrow">Un espacio para tu curiosidad</span><h1 id="landing-title">Lo que aprendes hoy<br><em>abre caminos mañana.</em></h1><p>No necesitas tener todas las respuestas para empezar. Observa, pregunta y vuelve a intentarlo: cada idea que comprendes cambia la forma en que ves el mundo.</p><div class="landing-values"><span>${icon("book")} Explora con calma</span><span>${icon("spark")} Aprende haciendo</span></div></div><figure class="learning-landscape" aria-label="Un paisaje tranquilo con naturaleza y un espacio de estudio"><img src="assets/images/learning-landscape.webp" alt="Ilustración de un espacio de estudio abierto a un paisaje de montañas, árboles y cielo claro" loading="eager" fetchpriority="high" onerror="this.hidden=true"><figcaption>Haz espacio para una idea nueva.</figcaption></figure></section><section class="landing-login" aria-labelledby="login-title"><div class="login-panel"><span class="eyebrow">Tu espacio de aprendizaje</span><h2 id="login-title">Bienvenido a tu aula.</h2><p class="muted">Continúa tu camino. Estamos para acompañarte.</p><div class="role-switch" aria-label="Tipo de acceso">${button("loginRole", "Estudiante", `data-role="student" aria-pressed="${loginRole === "student"}" class="${loginRole === "student" ? "active" : ""}"`)}${button("loginRole", "Docente", `data-role="teacher" aria-pressed="${loginRole === "teacher"}" class="${loginRole === "teacher" ? "active" : ""}"`)}</div><form id="login-form"><label for="username">${loginRole === "teacher" ? "Usuario docente" : "Número de cédula"}</label><input id="username" name="username" autocomplete="username" ${loginRole === "student" ? 'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"' : 'value="DocenteULEAM"'} required placeholder="${loginRole === "student" ? "Tu cédula de diez dígitos" : "Usuario"}"><label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required>${button("showPassword", icon("eye"), 'aria-label="Mostrar contraseña"')}</div><p class="error" id="login-error" role="alert">${escape(error)}</p><button type="submit" class="primary full">Entrar a mi aula ${icon("arrow")}</button></form><p class="login-help">${icon("shield")}${backendConfigured ? "Ingresa con tu cédula y contraseña. Si eres nuevo, usa tu cédula como clave temporal y cámbiala al entrar. Si necesitas ayuda, contacta a la docente." : "Tu aula estará disponible al conectar las cuentas institucionales."}</p>${APP_CONFIG.previewEnabled ? button("preview", "Explorar las tres materias", 'class="full"') : ""}</div><p class="landing-signoff">Aprender lleva tiempo. Cada paso cuenta.</p></section></main>`;
 
 }
 function enterPreview(role = "student") {
@@ -766,7 +765,7 @@ function adminStudents() {
   const students = state.students.filter((s) =>
     s.courses.includes(currentCourse),
   );
-  return `${registrationStatus?.courseId === currentCourse ? `<p id="registration-summary" class="registration-status saved-status ${registrationStatus.kind}" role="status">${escape(registrationStatus.message)}</p>` : ""}<div class="two-equal"><article class="card"><span class="eyebrow">Alta individual</span><h2>Agregar un estudiante</h2><form id="add-student" novalidate data-course="${currentCourse}"><label>Cédula<input name="id" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required></label><p class="student-email-preview"><strong>Correo de recuperación</strong><br><output id="student-email">Se genera al completar la cédula.</output></p><label>Nombres y apellidos<input name="name" minlength="2" maxlength="120" required></label><label>Paralelo<input name="parallel" value="A" maxlength="30" required></label><p class="muted" style="font-size:13px">Correo: e{cédula}@live.uleam.edu.ec. La contraseña temporal será la cédula y deberá cambiarse al entrar.</p><button type="submit" class="primary">Registrar en ${escape(course().code)}</button><p id="manual-status" class="registration-status" role="status" aria-live="polite" hidden></p></form></article><article class="card"><span class="eyebrow">Carga revisable</span><h2>Importar desde Excel</h2><p class="muted">Descarga la plantilla, completa los datos y revisa la vista previa antes de confirmar. Al confirmar, las cuentas y matrículas se guardan en la base de datos institucional.</p>${button("template", "Descargar plantilla Excel")}<label>Archivo .xlsx<input id="import-file" type="file" accept=".xlsx"></label><p class="muted" style="font-size:12px">Máximo 2000 filas y 5 MB. Cédulas como texto para conservar los ceros iniciales.</p><p id="import-status" role="status"></p><div id="import-preview"></div></article></div><article class="card"><div class="section-title"><h2 id="roster-heading">Estudiantes de la materia (${students.length})</h2><span class="badge teal">Matrículas separadas</span></div><label>Buscar por nombre o cédula<input id="student-search" type="search" placeholder="Buscar estudiante"></label><div id="student-list">${studentTable(students)}</div></article>`;
+  return `${registrationStatus?.courseId === currentCourse ? `<p id="registration-summary" class="registration-status saved-status ${registrationStatus.kind}" role="status">${escape(registrationStatus.message)}</p>` : ""}<div class="two-equal"><article class="card"><span class="eyebrow">Alta individual</span><h2>Agregar un estudiante</h2><form id="add-student" novalidate data-course="${currentCourse}"><label>Cédula<input name="id" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required></label><p class="student-email-preview"><strong>Identificador interno de Auth</strong><br><output id="student-email">Se genera al completar la cédula.</output></p><label>Nombres y apellidos<input name="name" minlength="2" maxlength="120" required></label><label>Paralelo<input name="parallel" value="A" maxlength="30" required></label><p class="muted" style="font-size:13px">El usuario y la contraseña temporal serán la cédula. Deberá cambiar la contraseña dentro de la página al primer ingreso. No se envían correos.</p><button type="submit" class="primary">Registrar en ${escape(course().code)}</button><p id="manual-status" class="registration-status" role="status" aria-live="polite" hidden></p></form></article><article class="card"><span class="eyebrow">Carga revisable</span><h2>Importar desde Excel</h2><p class="muted">Descarga la plantilla, completa los datos y revisa la vista previa antes de confirmar. Al confirmar, las cuentas y matrículas se guardan en la base de datos institucional.</p>${button("template", "Descargar plantilla Excel")}<label>Archivo .xlsx<input id="import-file" type="file" accept=".xlsx"></label><p class="muted" style="font-size:12px">Máximo 2000 filas y 5 MB. Cédulas como texto para conservar los ceros iniciales.</p><p id="import-status" role="status"></p><div id="import-preview"></div></article></div><article class="card"><div class="section-title"><h2 id="roster-heading">Estudiantes de la materia (${students.length})</h2><span class="badge teal">Matrículas separadas</span></div><label>Buscar por nombre o cédula<input id="student-search" type="search" placeholder="Buscar estudiante"></label><div id="student-list">${studentTable(students)}</div></article>`;
 }
 function adminResults() {
   const students = state.students.filter((s) =>
@@ -932,10 +931,6 @@ function account() {
     `${heading("Mi cuenta", "Tu acceso institucional.", "La matrícula define las materias que puedes consultar.")}<article class="card"><h2>${escape(identity.profile.display_name)}</h2><p>${mode === "live" ? escape(identity.user?.email || "") : "Estás recorriendo una vista previa, sin una cuenta registrada."}</p>${mode === "live" ? button("changePassword", "Cambiar mi contraseña", 'class="primary"') : button("logout", "Ir al acceso institucional")}</article>`,
     "Mi cuenta",
   );
-}
-function recover() {
-  app.innerHTML = `${guestHeader()}<main class="access-page" id="main" tabindex="-1"><article class="card"><span class="eyebrow">Recupera tu acceso</span><h1>Vuelve a tu aula.</h1><p class="muted">Escribe tu cédula. Si la cuenta existe, recibirás un enlace en tu correo institucional e{cédula}@live.uleam.edu.ec.</p><form id="recovery-form"><label>Usuario o cédula<input name="username" required autocomplete="username"></label><button type="submit" class="primary full">Solicitar enlace de recuperación</button><p id="recovery-status" role="status"></p></form>${button("login", "Volver al acceso", 'class="link full"')}</article></main>`;
-  focus();
 }
 function changePassword(required = false) {
   app.innerHTML = `${guestHeader()}<main class="access-page" id="main" tabindex="-1"><article class="card"><span class="eyebrow">Protege tu cuenta</span><h1>Elige tu nueva contraseña.</h1><p class="muted">${required ? "Antes de entrar, cambia la clave temporal. " : ""}Usa al menos doce caracteres y una contraseña distinta de tu cédula.</p><form id="password-form"><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label>Confirmar contraseña<input name="confirm" type="password" autocomplete="new-password" minlength="12" required></label><button type="submit" class="primary full">Guardar mi contraseña</button><p id="password-status" role="status"></p></form></article></main>`;
@@ -1171,9 +1166,6 @@ app.addEventListener("click", async (event) => {
         break;
       case "changePassword":
         changePassword();
-        break;
-      case "recover":
-        recover();
         break;
       case "logout":
         if (
@@ -1420,7 +1412,7 @@ app.addEventListener("submit", async (event) => {
     b = f.querySelector('button[type="submit"]'),
     originalButton = b?.innerHTML;
   if (
-    !["login-form", "recovery-form", "password-form"].includes(formId) &&
+    !["login-form", "password-form"].includes(formId) &&
     !requireWorkspace()
   )
     return;
@@ -1443,12 +1435,6 @@ app.addEventListener("submit", async (event) => {
       const d = new FormData(f);
       identity = await backend.login(d.get("username"), d.get("password"));
       await loadLive();
-    }
-    if (formId === "recovery-form") {
-      const d = new FormData(f);
-      await backend.recover(d.get("username"));
-      document.querySelector("#recovery-status").textContent =
-        "Solicitud recibida. Si la cuenta existe y el correo está habilitado, recibirás el enlace. Revisa también correo no deseado.";
     }
     if (formId === "password-form") {
       const d = new FormData(f);
@@ -1517,7 +1503,7 @@ app.addEventListener("submit", async (event) => {
       const existing = state.students.find((s) => s.id === id);
       let message;
       if (existing?.courses.includes(courseId)) {
-        message = `Este estudiante ya está inscrito en ${courses.find((c) => c.id === courseId).code}. ${mode === "live" ? "Cuenta y matrícula confirmadas en Supabase" : "Matrícula de prueba confirmada en este navegador"}. Correo de recuperación: ${institutionalEmail(id)}.`;
+        message = `Este estudiante ya está inscrito en ${courses.find((c) => c.id === courseId).code}. ${mode === "live" ? "Cuenta y matrícula confirmadas en Supabase" : "Matrícula de prueba confirmada en este navegador"}. Identificador interno de Auth: ${institutionalEmail(id)}.`;
       } else {
         const rows = normalizeRows(
           [
@@ -1534,7 +1520,7 @@ app.addEventListener("submit", async (event) => {
         if (rows[0]?.error) throw Error(rows[0].error);
         const result = await registerRows(rows);
         if (result.failed) throw Error(registrationMessage(result));
-        message = `${registrationMessage(result)} Correo de recuperación: ${institutionalEmail(id)}.`;
+        message = `${registrationMessage(result)} Identificador interno de Auth: ${institutionalEmail(id)}.`;
       }
       registrationStatus = { courseId, kind:"success", message };
       if (route === "admin" && adminTab === "students" && currentCourse === courseId) admin();
@@ -1558,7 +1544,7 @@ app.addEventListener("submit", async (event) => {
     }
   } catch (e) {
     const out = f.querySelector(
-      "#login-error,#recovery-status,#password-status,#quiz-error,#manual-status,#author-status,.schedule-status",
+      "#login-error,#password-status,#quiz-error,#manual-status,#author-status,.schedule-status",
     );
     if (out && formId === "add-student") setRegistrationStatus(out, e.message, "error");
     else if (out) out.textContent = e.message;
@@ -1670,8 +1656,7 @@ app.addEventListener("input", (event) => {
 });
 (async () => {
   try {
-    if (backendConfigured && (await backend.handleRecovery()))
-      return changePassword(true);
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
     identity = await backend.restore();
     if (identity) return loadLive();
   } catch (e) {

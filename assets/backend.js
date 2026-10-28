@@ -18,16 +18,6 @@ function emailFor(username) {
   }
   return institutionalEmail(username);
 }
-function redirectUrl() {
-  const target = APP_CONFIG.siteUrl || new URL("./", location.href).href;
-  const parsed = new URL(target);
-  if (
-    parsed.protocol !== "https:" &&
-    !["localhost", "127.0.0.1"].includes(parsed.hostname)
-  )
-    throw new Error("El sitio de recuperación debe usar HTTPS.");
-  return parsed.href;
-}
 function currentSession() {
   try {
     return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
@@ -54,7 +44,7 @@ function errorText(data, status) {
   );
   const known = {
     "Invalid login credentials": "Usuario o contraseña incorrectos.",
-    "Email not confirmed": "Verifica primero tu correo institucional.",
+    "Email not confirmed": "Contacta a la docente para habilitar tu cuenta.",
     WINDOW_CLOSED: "La evaluación está cerrada o fuera de su horario.",
     SUBMISSION_ID_REUSED:
       "Esta entrega ya existe con otras respuestas. Recarga la actividad antes de volver a enviar.",
@@ -182,41 +172,6 @@ export const backend = Object.freeze({
     } finally {
       sessionStorage.removeItem(SESSION_KEY);
     }
-  },
-  async recover(username) {
-    await raw(
-      `/auth/v1/recover?redirect_to=${encodeURIComponent(redirectUrl())}`,
-      { method: "POST", body: { email: emailFor(username) } },
-    );
-    // Una respuesta satisfactoria solo confirma la solicitud, no la entrega del correo ni la existencia de la cuenta.
-  },
-  async handleRecovery() {
-    const fragment = new URLSearchParams(location.hash.replace(/^#/, ""));
-    const type = fragment.get("type");
-    if (fragment.has("error") || fragment.has("error_description")) {
-      history.replaceState(null, "", location.pathname + location.search);
-      throw new Error("El enlace expiró o no es válido. Solicita uno nuevo.");
-    }
-    if (
-      !["recovery", "invite"].includes(type) ||
-      !fragment.get("access_token") ||
-      !fragment.get("refresh_token")
-    )
-      return false;
-    const session = {
-      access_token: fragment.get("access_token"),
-      refresh_token: fragment.get("refresh_token"),
-      expires_in: Number(fragment.get("expires_in") || 3600),
-    };
-    history.replaceState(null, "", location.pathname + location.search); // Retirar tokens del enlace inmediatamente.
-    remember(session);
-    try {
-      await validatedIdentity();
-    } catch (error) {
-      sessionStorage.removeItem(SESSION_KEY);
-      throw error;
-    }
-    return true;
   },
   async updatePassword(password) {
     const identity = await validatedIdentity();

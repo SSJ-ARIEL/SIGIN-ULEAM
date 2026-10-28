@@ -20,7 +20,7 @@ npm start
 - Configuración de apariencia clara, oscura o del sistema, conservada en el navegador antes y después de iniciar sesión.
 - Materias separadas; semanas agrupadas por unidad. **Práctica y examen** permite elegir modalidad, materia y semana directamente. La práctica es libre; el examen respeta matrícula, calendario e intentos.
 - La práctica marca cada respuesta correcta en verde y cada incorrecta en rojo, con etiquetas de texto. Al editar se retira la corrección anterior. El examen muestra su caso y consignas sin lecturas, conceptos de apoyo ni pistas; la corrección aparece después de entregar.
-- El alta manual y Excel muestran validación, guardado pendiente y resultados persistentes. La confirmación consulta perfiles y matrículas en Supabase; no se agregan filas optimistas. La cédula genera automáticamente el correo de recuperación, y repetir una matrícula existente no crea otra cuenta ni cambia su contraseña.
+- El alta manual y Excel muestran validación, guardado pendiente y resultados persistentes. La confirmación consulta perfiles y matrículas en Supabase; no se agregan filas optimistas. La cédula genera automáticamente el identificador interno de Auth, y repetir una matrícula existente no crea otra cuenta ni cambia su contraseña.
 - Cinco preguntas por semana: dos decisiones razonadas, relaciones de conceptos, una secuencia justificada y un crucigrama. Las actividades incluidas no exigen cálculos. Cada respuesta recibe una explicación y los casos contienen la información necesaria para resolverlos.
 - Lecturas complementarias con enlace a un documento o apartado concreto, autor, sección sugerida y propósito de lectura.
 - Panel docente: horarios de Ecuador, límite de intentos, autor de evaluaciones privadas de cuatro formatos, estudiantes manuales/Excel con vista previa, exportación y ajuste de notas con motivo.
@@ -32,13 +32,13 @@ La URL y clave publicable del proyecto están en `assets/config.js`. Supabase es
 
 La entrada pública de vista previa está desactivada. Para usar el aula es obligatorio iniciar sesión con una cuenta válida. La vista previa se habilita únicamente dentro de las pruebas de navegador con configuración simulada. Los contenidos estáticos son públicos; los datos personales y notas se guardan en Supabase con RLS. Los ejemplos de práctica tienen respuestas públicas para aprender. Las evaluaciones reales se crean aparte con el autor docente y se guardan en el esquema privado. Nunca cargar los mismos ejercicios públicos como evaluación secreta.
 
-Cuenta estudiantil: correo `e{cedula}@live.uleam.edu.ec`, contraseña temporal igual a la cédula, cambio obligatorio antes del acceso. El alta ocurre en el servidor; no se guarda su clave en el repositorio. La matrícula no confirma la existencia del buzón. Como la clave inicial es predecible, activar mediante correo institucional es preferible antes de incorporar alumnado real.
+Cuenta estudiantil: correo `e{cedula}@live.uleam.edu.ec`, contraseña temporal igual a la cédula, cambio obligatorio antes del acceso. El alta ocurre en el servidor; no se guarda su clave en el repositorio. La matrícula no confirma la existencia del buzón. El estudiante entra con cédula y cambia su clave dentro de la página. No se ofrece recuperación por correo.
 
 Cuenta docente: usuario visible `DocenteULEAM`, asociado al correo configurado en `teacherEmail`. La cuenta y perfil ya existen en Auth y la base de datos; la contraseña no se incluye en archivos. La aplicación obtiene el rol del servidor, no de un valor editable local.
 
 RLS protege perfiles, matrículas y resultados. La evaluación valida inscripción, fechas y número de intentos, y calcula notas en una operación transaccional. No hay fallback a calificación local en una evaluación real. Los ajustes docentes conservan historial.
 
-Se comprobaron inicios de sesión remotos de ambos roles, las tres materias de la docente, el perfil propio y bloqueo inicial por contraseña temporal del estudiante, el rechazo de altas desde el rol estudiante y el rechazo de lecturas anónimas. Una solicitud de recuperación respondió HTTP 200 y el usuario confirmó la llegada al buzón institucional. El cambio de contraseña posterior quedó registrado en el servidor; la nueva contraseña es privada y no se utilizó en pruebas del entorno. Custom SMTP debe prepararse antes de incorporar más estudiantes por los límites del correo predeterminado.
+Se comprobaron inicios de sesión remotos de ambos roles, las tres materias de la docente, el perfil propio y bloqueo inicial por contraseña temporal del estudiante, el rechazo de altas desde el rol estudiante y el rechazo de lecturas anónimas. La recuperación por correo se retiró de la aplicación. El cambio de contraseña posterior quedó registrado en el servidor; la nueva contraseña es privada y no se utilizó en pruebas del entorno. La configuración para suprimir correos de Auth se documenta en `docs/SUPABASE.md`.
 
 Los 48 bancos privados están cargados y verificados: 16 por materia, cinco retos por semana y 240 retos de evaluación con casos distintos de la práctica. Los 48 enunciados se consultaron mediante la sesión docente real y no incluyen campos de solución. Las 48 evaluaciones permanecen cerradas deliberadamente para que la docente revise los casos con **Ver evaluación**, en modo de solo lectura, y decida el calendario.
 
@@ -52,7 +52,7 @@ El repositorio está en la organización académica `siginuleam` y la dirección
 
 ## Validación
 
-Pruebas Node: 48 semanas/240 tareas, contexto suficiente, conservación de títulos, PDF, corrección de los formatos y ausencia de cálculos en las actividades incluidas, cuadrículas, importación y matrículas múltiples. Pruebas de adaptador/Edge: autenticación servidor, recuperación, refresh concurrente, altas autorizadas y rollback. PostgreSQL16 real: RLS, servidor de notas, límites simultáneos, horarios, cambio obligatorio y publicación privada.
+Pruebas Node: 48 semanas/240 tareas, contexto suficiente, conservación de títulos, PDF, corrección de los formatos y ausencia de cálculos en las actividades incluidas, cuadrículas, importación y matrículas múltiples. Pruebas de adaptador/Edge: autenticación servidor, recuperación deshabilitada, refresh concurrente, altas autorizadas y rollback. PostgreSQL16 real: RLS, servidor de notas, límites simultáneos, horarios, cambio obligatorio y publicación privada.
 
 Navegador: tres materias, cuatro formatos y cinco preguntas por semana, ambos temas visuales, acceso directo a prácticas y examen, plantilla Excel y layout en 360/390/768/1024/1440/1920 px. No equivale a validación de correo o permisos en el proyecto publicado.
 
