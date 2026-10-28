@@ -12,11 +12,12 @@ npm run build
 npm start
 ```
 
-`npm start` sirve el checkout en el puerto 4173. Las tareas cloud ya están aisladas; usar este checkout, no crear worktrees. Playwright/Chromium permiten ejecutar `python scripts/browser_smoke.py` cuando estén instalados. `SIGIN_TEST_URL` ajusta la dirección local del runner.
+`npm start` sirve el checkout en el puerto 4173. Las tareas cloud ya están aisladas; usar este checkout, no crear worktrees. Playwright/Chromium permiten ejecutar `python scripts/browser_smoke.py` cuando estén instalados. `SIGIN_TEST_URL` ajusta la dirección local del runner. `python3 scripts/background_smoke.py` verifica movimiento real, pausa, temas, limpieza al navegar y respaldo sin WebGL; las pruebas de interfaz usan movimiento reducido para capturas estables.
 
 ## Experiencia
 
 - Diseño minimalista con portada tipográfica y paleta burdeos, crema, marrón, arena y coral, adaptada a los modos claro y oscuro. Escritorio con navegación lateral y contenido que aprovecha el ancho; móvil con menú y tarjetas apiladas.
+- Fondo animado Gradient Waves de React Bits en la portada, con horizonte `#A60321` y escala `0.77`, adaptado a la paleta de ambos temas. Incluye pausa, movimiento reducido y fondo estático si WebGL no está disponible; sin peticiones a CDN. Licencia y atribución en `assets/vendor/licenses/react-bits.md`.
 - Configuración de apariencia clara, oscura o del sistema, conservada en el navegador antes y después de iniciar sesión.
 - Materias separadas; semanas agrupadas por unidad. **Práctica y examen** permite elegir modalidad, materia y semana directamente. La práctica es libre; el examen respeta matrícula, calendario e intentos.
 - La práctica marca cada respuesta correcta en verde y cada incorrecta en rojo, con etiquetas de texto. Al editar se retira la corrección anterior. El examen muestra su caso y consignas sin lecturas, conceptos de apoyo ni pistas; la corrección aparece después de entregar.

@@ -1615,18 +1615,6 @@ button.dark { background: var(--burgundy); color: var(--primary-ink); }
 .landing-copy > p { max-width: 440px; color: var(--muted); font-size: 15px; line-height: 1.8; }
 .landing-values { display: flex; flex-wrap: wrap; gap: 24px; color: var(--teal); margin: 28px 0 0; }
 .landing-values span { display: inline-flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; }
-.landing-composition {
-  position: relative;
-  height: 112px;
-  margin: 38px 0 0;
-  border-top: 1px solid var(--line);
-  overflow: hidden;
-}
-.composition-caption { position: absolute; left: 0; top: 24px; font-size: 10px; letter-spacing: .16em; color: var(--muted); }
-.composition-arch { position: absolute; right: 28px; bottom: -58px; width: 150px; height: 150px; border: 1px solid var(--sand); border-radius: 50% 50% 0 0; }
-.composition-arch::before { content: ""; position: absolute; inset: 17px; border: 1px solid var(--teal); border-radius: inherit; }
-.composition-disc { position: absolute; right: 133px; bottom: 12px; width: 42px; height: 42px; background: var(--coral); border-radius: 50%; }
-.composition-line { position: absolute; right: 0; bottom: 12px; width: 116px; height: 2px; background: var(--burgundy); }
 .landing-login { padding: 0; min-width: 0; width: 100%; max-width: 440px; justify-self: end; }
 .login-panel { max-width: none; margin: 0; padding: 34px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
 .login-panel .eyebrow { font-size: 10px; }
@@ -1711,7 +1699,6 @@ button.dark { background: var(--burgundy); color: var(--primary-ink); }
   .landing-login { max-width: none; justify-self: stretch; }
   .landing h1 { font-size: clamp(40px, 7vw, 56px); margin: 18px 0; }
   .landing-copy > p { max-width: 520px; font-size: 14px; margin-bottom: 0; }
-  .landing-composition { display: none; }
   .landing-values { display: none; }
   .guest-header-actions .institution { display: none; }
 }
@@ -1830,4 +1817,40 @@ button.dark { background: var(--burgundy); color: var(--primary-ink); }
   color: var(--ink);
   font-size: 14px;
   overflow-wrap: anywhere;
+}
+
+/* React Bits Gradient Waves: decoration stays behind every control. */
+.landing-waves {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 90% 85%, color-mix(in srgb, var(--coral) 35%, transparent), transparent 65%),
+    var(--canvas);
+}
+.landing-waves canvas { display: block; width: 100%; height: 100%; }
+.landing-waves::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--canvas) 97%, transparent) 0%,
+    color-mix(in srgb, var(--canvas) 87%, transparent) 42%,
+    color-mix(in srgb, var(--canvas) 18%, transparent) 100%);
+}
+#app:has(> .landing-waves) { isolation: isolate; }
+.landing-waves ~ .landing { background: transparent; }
+.landing-waves ~ .login-top { background: color-mix(in srgb, var(--canvas) 92%, transparent); }
+.landing-waves ~ .landing .landing-signoff {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--canvas);
+}
+.motion-button { min-width: 44px; min-height: 44px; padding: 9px; background: transparent; }
+.motion-button[hidden] { display: none; }
+.motion-button[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
+@media (max-width: 650px) {
+  .landing-waves::after { background: color-mix(in srgb, var(--canvas) 85%, transparent); }
 }

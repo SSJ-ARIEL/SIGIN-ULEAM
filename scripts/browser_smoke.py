@@ -35,14 +35,15 @@ def text_readable(locator):
  assert all(value>=4.5 for value in contrast.values()),contrast
 with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
- public_page=browser.new_page()
+ # Motion is validated independently by background_smoke.py; keep layout captures stable.
+ public_page=browser.new_page(reduced_motion='reduce',device_scale_factor=0.5)
  public_errors=[]
  public_page.on('pageerror', lambda e: public_errors.append(str(e)))
  public_page.goto(os.environ.get('SIGIN_TEST_URL','http://127.0.0.1:4173/'))
  public_page.locator('#login-form').wait_for()
  assert public_page.get_by_role('button',name='Explorar las tres materias').count()==0
  expect(public_page.locator('.landing-copy h1')).to_be_visible()
- expect(public_page.locator('.landing-composition')).to_have_attribute('aria-hidden','true')
+ expect(public_page.locator('.landing-waves')).to_have_attribute('aria-hidden','true')
  assert public_page.locator('.landing-story img').count()==0
  surfaces={}
  for appearance in ['light','dark']:
@@ -105,7 +106,7 @@ with sync_playwright() as p:
  assert public_page.evaluate("sessionStorage.getItem('sigin-auth-session-v1')")==None
  assert not public_errors,public_errors
  public_page.close()
- context=browser.new_context(viewport={'width':1440,'height':1000})
+ context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce',device_scale_factor=0.5)
  config=(root/'assets/config.js').read_text()
  assert 'previewEnabled: false' in config
  context.route('**/assets/config.js',lambda route:route.fulfill(content_type='text/javascript',body=config.replace('previewEnabled: false','previewEnabled: true')))

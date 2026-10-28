@@ -1,4 +1,5 @@
 import { courses } from "./courses.js";
+import { createGradientWaves } from "./gradient-waves.js";
 import { backend, backendConfigured, institutionalEmail } from "./backend.js";
 import { APP_CONFIG } from "./config.js";
 import {
@@ -48,6 +49,8 @@ const icons = {
   sun: "M12 3v2 M12 19v2 M3 12h2 M19 12h2 M5.6 5.6 1.4 1.4 M17 17l1.4 1.4 M5.6 18.4 1.4-1.4 M17 7l1.4-1.4 M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
   moon: "M20 15A8 8 0 0 1 9 4a9 9 0 1 0 11 11z",
   monitor: "M3 4h18v13H3z M8 21h8 M12 17v4",
+  pause: "M8 5v14 M16 5v14",
+  play: "m8 5 11 7-11 7z",
 };
 const icon = (name) =>
   `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="${icons[name] || icons.book}"/></svg>`;
@@ -70,6 +73,24 @@ let state,
   registrationStatus = null,
   matchSelected = null,
   toastTimer;
+let landingWaves = null;
+const motionKey = "sigin-motion-paused-v1";
+let motionPaused = false;
+try { motionPaused = localStorage.getItem(motionKey) === "true"; } catch {}
+function stopLandingWaves() {
+  landingWaves?.destroy();
+  landingWaves = null;
+}
+function updateMotionControl(state) {
+  const control = app.querySelector('[data-action="toggleMotion"]');
+  if (!control) return;
+  control.hidden = state === "fallback" || state === "reduced";
+  control.setAttribute("aria-pressed", String(motionPaused));
+  const label = motionPaused ? "Reanudar animación de fondo" : "Pausar animación de fondo";
+  control.setAttribute("aria-label", label);
+  control.title = label;
+  control.innerHTML = icon(motionPaused ? "play" : "pause");
+}
 const themeKey = "sigin-theme-v1";
 const systemAppearance = matchMedia("(prefers-color-scheme: dark)");
 let themePreference = document.documentElement.dataset.themePreference || "system";
@@ -80,6 +101,7 @@ function applyTheme(preference, persist = true) {
     ? (systemAppearance.matches ? "dark" : "light")
     : preference;
   document.documentElement.dataset.theme = theme;
+  landingWaves?.setTheme(theme);
   document.documentElement.dataset.themePreference = preference;
   document.documentElement.style.colorScheme = theme;
   document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#1c1817" : "#f8f4ed";
@@ -117,6 +139,7 @@ function requireWorkspace() {
   return false;
 }
 const publicActions = new Set([
+  "toggleMotion",
   "loginRole",
   "showPassword",
   "login",
@@ -185,8 +208,8 @@ function visibleCourses() {
     enrolled.some((e) => e.course_id === c.id && e.active),
   );
 }
-function guestHeader() {
-  return `<header class="login-top">${logo()}<div class="guest-header-actions"><span class="institution">Aula institucional</span>${button("settings", icon("settings") + '<span class="settings-label">Configuración</span>', 'class="appearance-button" aria-label="Configuración de apariencia"')}</div></header>`;
+function guestHeader(withMotion = false) {
+  return `<header class="login-top">${logo()}<div class="guest-header-actions"><span class="institution">Aula institucional</span>${withMotion ? button("toggleMotion", icon(motionPaused ? "play" : "pause"), 'class="motion-button" aria-label="Pausar animación de fondo" aria-pressed="false"') : ""}${button("settings", icon("settings") + '<span class="settings-label">Configuración</span>', 'class="appearance-button" aria-label="Configuración de apariencia"')}</div></header>`;
 }
 function appearanceMarkup() {
   return `<p class="muted">Elige cómo quieres ver tu aula. Esta preferencia se guarda en este navegador y puedes cambiarla cuando quieras.</p><fieldset class="theme-fieldset"><legend>Apariencia</legend><div class="theme-options">${[
@@ -214,6 +237,7 @@ function settings() {
 function shell(content, title = "Inicio") {
   if (!requireWorkspace()) return;
   const name = identity?.profile.display_name || "Visitante";
+  stopLandingWaves();
   app.innerHTML = `<div class="app-shell"><aside class="sidebar" id="sidebar">${logo()}<div><p class="sidebar-label">Tu espacio de aprendizaje</p><nav class="side-nav" aria-label="Principal">${button("home", icon("home") + "Inicio", `class="${route === "home" ? "active" : ""}"`)}${button("myCourses", icon("book") + "Mis materias", `class="${route === "course" || route === "lesson" ? "active" : ""}"`)}${button("activities", icon("spark") + "Práctica y examen", `class="${route === "activities" || route === "quiz" ? "active" : ""}"`)}${button("grades", icon("chart") + "Mis resultados", `class="${route === "grades" ? "active" : ""}"`)}${teacher() ? button("admin", icon("users") + "Espacio docente", `class="${route === "admin" ? "active" : ""}"`) : ""}</nav></div><div><p class="sidebar-label">Tus materias</p><nav class="side-nav" aria-label="Materias">${visibleCourses()
     .map((c) =>
       button(
@@ -240,8 +264,12 @@ function login(error = "") {
   liveWorkspaceReady = false;
   quiz = null;
   route = "login";
-  app.innerHTML = `${guestHeader()}<main class="landing" id="main" tabindex="-1"><section class="landing-story" aria-labelledby="landing-title"><div class="landing-copy"><span class="eyebrow">Aprender. Practicar. Avanzar.</span><h1 id="landing-title">Tu próximo paso<br><em>empieza aquí.</em></h1><p>Un espacio para conectar ideas y poner en práctica lo que aprendes. Encuentra tus materias y avanza, una semana a la vez.</p><div class="landing-values"><span>${icon("book")} Explora con calma</span><span>${icon("spark")} Aprende haciendo</span></div></div><div class="landing-composition" aria-hidden="true"><span class="composition-caption">EL CONOCIMIENTO ABRE CAMINOS.</span><span class="composition-arch"></span><span class="composition-disc"></span><span class="composition-line"></span></div></section><section class="landing-login" aria-labelledby="login-title"><div class="login-panel"><span class="eyebrow">Acceso al aula</span><h2 id="login-title">Qué bueno verte.</h2><p class="muted">Ingresa para continuar con tu aprendizaje.</p><div class="role-switch" aria-label="Tipo de acceso">${button("loginRole", "Estudiante", `data-role="student" aria-pressed="${loginRole === "student"}" class="${loginRole === "student" ? "active" : ""}"`)}${button("loginRole", "Docente", `data-role="teacher" aria-pressed="${loginRole === "teacher"}" class="${loginRole === "teacher" ? "active" : ""}"`)}</div><form id="login-form"><label for="username">${loginRole === "teacher" ? "Usuario docente" : "Número de cédula"}</label><input id="username" name="username" autocomplete="username" ${loginRole === "student" ? 'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"' : 'value="DocenteULEAM"'} required placeholder="${loginRole === "student" ? "Tu cédula de diez dígitos" : "Usuario"}"><label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required>${button("showPassword", icon("eye"), 'aria-label="Mostrar contraseña"')}</div><p class="error" id="login-error" role="alert">${escape(error)}</p><button type="submit" class="primary full">Entrar a mi aula ${icon("arrow")}</button></form><p class="login-help">${icon("shield")}${backendConfigured ? "Ingresa con tu cédula y contraseña. Si eres nuevo, usa tu cédula como clave temporal y cámbiala al entrar. Si necesitas ayuda, contacta a la docente." : "Tu aula estará disponible al conectar las cuentas institucionales."}</p>${APP_CONFIG.previewEnabled ? button("preview", "Explorar las tres materias", 'class="full"') : ""}</div><p class="landing-signoff">Aprender lleva tiempo. Cada paso cuenta.</p></section></main>`;
-
+  stopLandingWaves();
+  app.innerHTML = `<div class="landing-waves" aria-hidden="true"></div>${guestHeader(true)}<main class="landing" id="main" tabindex="-1"><section class="landing-story" aria-labelledby="landing-title"><div class="landing-copy"><span class="eyebrow">Aprender. Practicar. Avanzar.</span><h1 id="landing-title">Tu próximo paso<br><em>empieza aquí.</em></h1><p>Un espacio para conectar ideas y poner en práctica lo que aprendes. Encuentra tus materias y avanza, una semana a la vez.</p><div class="landing-values"><span>${icon("book")} Explora con calma</span><span>${icon("spark")} Aprende haciendo</span></div></div></section><section class="landing-login" aria-labelledby="login-title"><div class="login-panel"><span class="eyebrow">Acceso al aula</span><h2 id="login-title">Qué bueno verte.</h2><p class="muted">Ingresa para continuar con tu aprendizaje.</p><div class="role-switch" aria-label="Tipo de acceso">${button("loginRole", "Estudiante", `data-role="student" aria-pressed="${loginRole === "student"}" class="${loginRole === "student" ? "active" : ""}"`)}${button("loginRole", "Docente", `data-role="teacher" aria-pressed="${loginRole === "teacher"}" class="${loginRole === "teacher" ? "active" : ""}"`)}</div><form id="login-form"><label for="username">${loginRole === "teacher" ? "Usuario docente" : "Número de cédula"}</label><input id="username" name="username" autocomplete="username" ${loginRole === "student" ? 'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"' : 'value="DocenteULEAM"'} required placeholder="${loginRole === "student" ? "Tu cédula de diez dígitos" : "Usuario"}"><label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required>${button("showPassword", icon("eye"), 'aria-label="Mostrar contraseña"')}</div><p class="error" id="login-error" role="alert">${escape(error)}</p><button type="submit" class="primary full">Entrar a mi aula ${icon("arrow")}</button></form><p class="login-help">${icon("shield")}${backendConfigured ? "Ingresa con tu cédula y contraseña. Si eres nuevo, usa tu cédula como clave temporal y cámbiala al entrar. Si necesitas ayuda, contacta a la docente." : "Tu aula estará disponible al conectar las cuentas institucionales."}</p>${APP_CONFIG.previewEnabled ? button("preview", "Explorar las tres materias", 'class="full"') : ""}</div><p class="landing-signoff">Aprender lleva tiempo. Cada paso cuenta.</p></section></main>`;
+  landingWaves = createGradientWaves(app.querySelector(".landing-waves"), {
+    paused: motionPaused,
+    onStateChange: updateMotionControl,
+  });
 }
 function enterPreview(role = "student") {
   if (!APP_CONFIG.previewEnabled)
@@ -933,6 +961,7 @@ function account() {
   );
 }
 function changePassword(required = false) {
+  stopLandingWaves();
   app.innerHTML = `${guestHeader()}<main class="access-page" id="main" tabindex="-1"><article class="card"><span class="eyebrow">Protege tu cuenta</span><h1>Elige tu nueva contraseña.</h1><p class="muted">${required ? "Antes de entrar, cambia la clave temporal. " : ""}Usa al menos doce caracteres y una contraseña distinta de tu cédula.</p><form id="password-form"><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label>Confirmar contraseña<input name="confirm" type="password" autocomplete="new-password" minlength="12" required></label><button type="submit" class="primary full">Guardar mi contraseña</button><p id="password-status" role="status"></p></form></article></main>`;
   focus();
 }
@@ -1085,6 +1114,11 @@ app.addEventListener("click", async (event) => {
   b.disabled = true;
   try {
     switch (action) {
+      case "toggleMotion":
+        motionPaused = !motionPaused;
+        try { localStorage.setItem(motionKey, String(motionPaused)); } catch {}
+        landingWaves?.setPaused(motionPaused);
+        break;
       case "settings":
         settings();
         break;
