@@ -20,6 +20,8 @@ def input_readable(locator):
  assert locator.is_visible()
  box=locator.bounding_box()
  assert box['width']>=200 and box['height']>=40,box
+ text_readable(locator)
+def text_readable(locator):
  contrast=locator.evaluate("""el=>{
   const rgb=s=>s.match(/[\\d.]+/g).map(Number);
   let node=el,bg;
@@ -39,9 +41,9 @@ with sync_playwright() as p:
  public_page.goto(os.environ.get('SIGIN_TEST_URL','http://127.0.0.1:4173/'))
  public_page.locator('#login-form').wait_for()
  assert public_page.get_by_role('button',name='Explorar las tres materias').count()==0
- illustration=public_page.locator('.learning-landscape img')
- expect(illustration).to_be_visible()
- public_page.wait_for_function("document.querySelector('.learning-landscape img').naturalWidth>0")
+ expect(public_page.locator('.landing-copy h1')).to_be_visible()
+ expect(public_page.locator('.landing-composition')).to_have_attribute('aria-hidden','true')
+ assert public_page.locator('.landing-story img').count()==0
  surfaces={}
  for appearance in ['light','dark']:
   choose_theme(public_page,appearance,guest=True)
@@ -49,34 +51,39 @@ with sync_playwright() as p:
   public_page.reload()
   public_page.locator('#login-form').wait_for()
   expect(public_page.locator('html')).to_have_attribute('data-theme',appearance)
+  expect(public_page.locator('meta[name="theme-color"]')).to_have_attribute('content','#1c1817' if appearance=='dark' else '#f8f4ed')
+  for selector in ['#login-form .primary','.role-switch button.active','.login-help','.landing h1 em']:
+   text_readable(public_page.locator(selector))
   for width in [1920,1440,1024,768,390,360]:
    public_page.set_viewport_size({'width':width,'height':1000})
    assert public_page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(appearance,width)
    for selector in ['#username','#password']:input_readable(public_page.locator(selector))
    if width in [1440,360]:public_page.screenshot(path=f'/tmp/sigin-login-{appearance}-{width}.png',full_page=True)
-  # The artwork comes before the headline, with a usable login CTA in the first
-  # screen at ordinary laptop/phone sizes. On desktop the two columns coexist.
+  # Text leads the minimal hero; the login CTA stays in the first screen on
+  # ordinary laptop/phone sizes. Desktop hero and form remain separate columns.
   for width,height in [(1366,768),(360,844)]:
    public_page.set_viewport_size({'width':width,'height':height})
    public_page.evaluate("window.scrollTo({top:0,left:0,behavior:'instant'})")
-   art=public_page.locator('.learning-landscape').bounding_box()
+   story=public_page.locator('.landing-story').bounding_box()
    headline=public_page.locator('.landing h1').bounding_box()
    login=public_page.locator('.login-panel').bounding_box()
    submit=public_page.locator('#login-form [type="submit"]').bounding_box()
-   assert art['y']+art['height']<=headline['y']+1,(width,art,headline)
-   assert art['y']>=0 and art['y']+art['height']<=height and art['width']>0,(width,art)
+   assert headline['y']>=0 and headline['y']+headline['height']<=height,(width,headline)
+   assert public_page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(appearance,width)
    assert submit['y']+submit['height']<=height,(width,submit)
    if width>1000:
-    assert art['x']+art['width']<login['x'],(art,login)
-    assert art['y']<login['y']+login['height'] and login['y']<art['y']+art['height'],(art,login)
+    assert story['x']+story['width']<=login['x'],(story,login)
+    assert story['y']<login['y']+login['height'] and login['y']<story['y']+story['height'],(story,login)
    else:assert login['y']>=headline['y']+headline['height']-1,(headline,login)
    public_page.screenshot(path=f'/tmp/sigin-hero-verified-{appearance}-{width}.png',full_page=True)
  assert surfaces['light']!=surfaces['dark'],'The login panel did not follow the selected theme'
  choose_theme(public_page,'system',guest=True)
  public_page.emulate_media(color_scheme='dark')
  expect(public_page.locator('html')).to_have_attribute('data-theme','dark')
+ expect(public_page.locator('meta[name="theme-color"]')).to_have_attribute('content','#1c1817')
  public_page.emulate_media(color_scheme='light')
  expect(public_page.locator('html')).to_have_attribute('data-theme','light')
+ expect(public_page.locator('meta[name="theme-color"]')).to_have_attribute('content','#f8f4ed')
  # Old browser data and controls inserted into the DOM must not grant access.
  public_page.evaluate("""() => localStorage.setItem('sigin-preview-v2', JSON.stringify({version:2,profile:{role:'teacher'},students:[],settings:[],attempts:[],practice:{}}))""")
  public_page.reload()
@@ -261,6 +268,10 @@ with sync_playwright() as p:
   choose_theme(page,appearance)
   page.locator('.sidebar [data-action="home"]').click()
   app_surfaces[appearance]=page.locator('.course-card').first.evaluate('el=>getComputedStyle(el).backgroundColor')
+  for selector in ['.side-nav button.active','.welcome-card h2','.welcome-card p','.course-content h3','.course-content p']:
+   text_readable(page.locator(selector).first)
+  for control in page.locator('button.primary, .course-content button').all():
+   if control.is_visible():text_readable(control)
   for width in [1920,1440,1024,768,390,360]:
    page.set_viewport_size({'width':width,'height':900});width_ok()
    if width in [1440,360]:page.screenshot(path=f'/tmp/sigin-home-{appearance}-{width}.png',full_page=True)
@@ -271,5 +282,5 @@ with sync_playwright() as p:
  page.reload();page.locator('#login-form').wait_for()
  expect(page.locator('html')).to_have_attribute('data-theme','light')
  assert not errors,errors
- print('PASS: artwork before headline + first-screen login laptop/phone; persistent themes; readable inputs; anonymous access closed; direct enrolled practice/exam; incorrect/correct controls red/green + text for four interaction types with retry clearing; assessment case without theory/resources/hints; Excel roundtrip; six widths; no JS errors')
+ print('PASS: minimal text hero + first-screen login laptop/phone; persistent themes and theme-color; readable controls and text; anonymous access closed; direct enrolled practice/exam; incorrect/correct controls red/green + text for four interaction types with retry clearing; assessment case without theory/resources/hints; Excel roundtrip; six widths; no JS errors')
  browser.close()

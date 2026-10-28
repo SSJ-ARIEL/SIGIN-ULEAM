@@ -16,7 +16,7 @@ npm start
 
 ## Experiencia
 
-- Portada ilustrada original y paleta suave. Escritorio con navegación lateral y contenido que aprovecha el ancho; móvil con menú y tarjetas apiladas.
+- Diseño minimalista con portada tipográfica y paleta burdeos, crema, marrón, arena y coral, adaptada a los modos claro y oscuro. Escritorio con navegación lateral y contenido que aprovecha el ancho; móvil con menú y tarjetas apiladas.
 - Configuración de apariencia clara, oscura o del sistema, conservada en el navegador antes y después de iniciar sesión.
 - Materias separadas; semanas agrupadas por unidad. **Práctica y examen** permite elegir modalidad, materia y semana directamente. La práctica es libre; el examen respeta matrícula, calendario e intentos.
 - La práctica marca cada respuesta correcta en verde y cada incorrecta en rojo, con etiquetas de texto. Al editar se retira la corrección anterior. El examen muestra su caso y consignas sin lecturas, conceptos de apoyo ni pistas; la corrección aparece después de entregar.
