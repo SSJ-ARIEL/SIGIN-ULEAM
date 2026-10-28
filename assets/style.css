@@ -1835,9 +1835,9 @@ button.dark { background: var(--burgundy); color: var(--primary-ink); }
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--canvas) 97%, transparent) 0%,
-    color-mix(in srgb, var(--canvas) 87%, transparent) 42%,
-    color-mix(in srgb, var(--canvas) 18%, transparent) 100%);
+    color-mix(in srgb, var(--canvas) 65%, transparent) 0%,
+    color-mix(in srgb, var(--canvas) 20%, transparent) 42%,
+    color-mix(in srgb, var(--canvas) 0%, transparent) 100%);
 }
 #app:has(> .landing-waves) { isolation: isolate; }
 .landing-waves ~ .landing { background: transparent; }
@@ -1852,5 +1852,16 @@ button.dark { background: var(--burgundy); color: var(--primary-ink); }
 .motion-button[hidden] { display: none; }
 .motion-button[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
 @media (max-width: 650px) {
-  .landing-waves::after { background: color-mix(in srgb, var(--canvas) 85%, transparent); }
+  .landing-waves::after { background: color-mix(in srgb, var(--canvas) 15%, transparent); }
+}
+
+/* Solid reading surfaces let the surrounding waves carry more color. */
+.landing-waves ~ .landing .landing-copy {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--canvas);
+}
+@media (max-width: 650px) {
+  .landing-waves ~ .landing .landing-copy { padding: 16px; }
 }

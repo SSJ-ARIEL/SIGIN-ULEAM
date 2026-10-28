@@ -235,6 +235,7 @@ export function createGradientWaves(container, { paused = false, onStateChange =
     // Freeze grain too when motion is paused or reduced.
     gl.uniform1f(u.uClock, clock);
     gl.uniform1f(u.uLight, theme === "light" ? 1 : 0);
+    gl.uniform1f(u.uBrightness, theme === "light" ? 1.8 : 1.35);
     gl.uniform3fv(u.uBackground, color(theme === "dark" ? "#1c1817" : "#f8f4ed"));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
@@ -302,7 +303,7 @@ export function createGradientWaves(container, { paused = false, onStateChange =
           uAmplitude: 2.5, uWaveScale: 0.77, uWaveRatio: 0.9,
           uSwell: 35, uTurbulence: 20, uHeight: 5.5,
           uTilt: 64 * Math.PI / 180, uZoom: 1, uFogDepth: 15,
-          uBrightness: 1, uOpacity: 1, uGrain: 0.2,
+          uBrightness: 1, uOpacity: 1, uGrain: 0.08,
           uOpaque: 1, uRelief: 1, uSheen: 0, uSteps: 56,
           uSwellWidth: 8,
           uStride: 0.9 / Math.max(1, 2.5 * ((0.77 / 7) * (1 + 35 / 20) + ((0.77 * 0.9) / 3) * (1 + 20 / 23)) / 1.5),

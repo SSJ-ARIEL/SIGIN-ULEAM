@@ -1,5 +1,7 @@
 import { courses } from "./courses.js";
 import { createGradientWaves } from "./gradient-waves.js";
+import { createPointerEffects } from "./pointer-effects.js";
+import { createUiMotion } from "./ui-motion.js";
 import { backend, backendConfigured, institutionalEmail } from "./backend.js";
 import { APP_CONFIG } from "./config.js";
 import {
@@ -77,20 +79,24 @@ let landingWaves = null;
 const motionKey = "sigin-motion-paused-v1";
 let motionPaused = false;
 try { motionPaused = localStorage.getItem(motionKey) === "true"; } catch {}
-function stopLandingWaves() {
+const pointerEffects = createPointerEffects({ paused: motionPaused });
+const uiMotion = createUiMotion(app, { paused: motionPaused });
+function clearScreenEffects() {
+  uiMotion.clearScreen();
   landingWaves?.destroy();
   landingWaves = null;
 }
-function updateMotionControl(state) {
+function updateMotionControl(state = matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "ready") {
   const control = app.querySelector('[data-action="toggleMotion"]');
   if (!control) return;
-  control.hidden = state === "fallback" || state === "reduced";
+  control.hidden = state === "reduced";
   control.setAttribute("aria-pressed", String(motionPaused));
-  const label = motionPaused ? "Reanudar animación de fondo" : "Pausar animación de fondo";
+  const label = motionPaused ? "Reanudar animaciones" : "Pausar animaciones";
   control.setAttribute("aria-label", label);
   control.title = label;
   control.innerHTML = icon(motionPaused ? "play" : "pause");
 }
+matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => updateMotionControl());
 const themeKey = "sigin-theme-v1";
 const systemAppearance = matchMedia("(prefers-color-scheme: dark)");
 let themePreference = document.documentElement.dataset.themePreference || "system";
@@ -208,8 +214,8 @@ function visibleCourses() {
     enrolled.some((e) => e.course_id === c.id && e.active),
   );
 }
-function guestHeader(withMotion = false) {
-  return `<header class="login-top">${logo()}<div class="guest-header-actions"><span class="institution">Aula institucional</span>${withMotion ? button("toggleMotion", icon(motionPaused ? "play" : "pause"), 'class="motion-button" aria-label="Pausar animación de fondo" aria-pressed="false"') : ""}${button("settings", icon("settings") + '<span class="settings-label">Configuración</span>', 'class="appearance-button" aria-label="Configuración de apariencia"')}</div></header>`;
+function guestHeader(withMotion = true) {
+  return `<header class="login-top">${logo()}<div class="guest-header-actions"><span class="institution">Aula institucional</span>${withMotion ? button("toggleMotion", icon(motionPaused ? "play" : "pause"), 'class="motion-button" aria-label="Pausar animaciones" aria-pressed="false"') : ""}${button("settings", icon("settings") + '<span class="settings-label">Configuración</span>', 'class="appearance-button" aria-label="Configuración de apariencia"')}</div></header>`;
 }
 function appearanceMarkup() {
   return `<p class="muted">Elige cómo quieres ver tu aula. Esta preferencia se guarda en este navegador y puedes cambiarla cuando quieras.</p><fieldset class="theme-fieldset"><legend>Apariencia</legend><div class="theme-options">${[
@@ -237,7 +243,7 @@ function settings() {
 function shell(content, title = "Inicio") {
   if (!requireWorkspace()) return;
   const name = identity?.profile.display_name || "Visitante";
-  stopLandingWaves();
+  clearScreenEffects();
   app.innerHTML = `<div class="app-shell"><aside class="sidebar" id="sidebar">${logo()}<div><p class="sidebar-label">Tu espacio de aprendizaje</p><nav class="side-nav" aria-label="Principal">${button("home", icon("home") + "Inicio", `class="${route === "home" ? "active" : ""}"`)}${button("myCourses", icon("book") + "Mis materias", `class="${route === "course" || route === "lesson" ? "active" : ""}"`)}${button("activities", icon("spark") + "Práctica y examen", `class="${route === "activities" || route === "quiz" ? "active" : ""}"`)}${button("grades", icon("chart") + "Mis resultados", `class="${route === "grades" ? "active" : ""}"`)}${teacher() ? button("admin", icon("users") + "Espacio docente", `class="${route === "admin" ? "active" : ""}"`) : ""}</nav></div><div><p class="sidebar-label">Tus materias</p><nav class="side-nav" aria-label="Materias">${visibleCourses()
     .map((c) =>
       button(
@@ -248,15 +254,18 @@ function shell(content, title = "Inicio") {
     )
     .join(
       "",
-    )}</nav></div><div class="sidebar-bottom"><nav class="side-nav">${button("settings", icon("settings") + "Configuración", `class="${route === "settings" ? "active" : ""}"`)}${button("account", icon("shield") + "Mi cuenta")}${button("logout", icon("logout") + "Salir")}</nav><p>Cada pregunta abre un camino.<br>Cada intento te ayuda a crecer.</p></div></aside><div class="workspace">${mode === "preview" ? `<div class="preview-bar"><span>Vista previa · sin cuentas ni correos reales</span>${button("switchRole", teacher() ? "Ver como estudiante" : "Ver como docente")}</div>` : ""}<header class="topbar">${button("menu", icon("menu"), 'class="menu-button" aria-label="Abrir menú"')}<div class="mobile-logo">${logo()}</div><div class="breadcrumb">Aula virtual <span aria-hidden="true">/</span> <strong>${escape(title)}</strong></div><div class="profile"><span class="name">${escape(name)}<br><small>${teacher() ? "Docente" : "Estudiante"}</small></span><span class="avatar">${escape(
+    )}</nav></div><div class="sidebar-bottom"><nav class="side-nav">${button("settings", icon("settings") + "Configuración", `class="${route === "settings" ? "active" : ""}"`)}${button("account", icon("shield") + "Mi cuenta")}${button("logout", icon("logout") + "Salir")}</nav><p>Cada pregunta abre un camino.<br>Cada intento te ayuda a crecer.</p></div></aside><div class="workspace">${mode === "preview" ? `<div class="preview-bar"><span>Vista previa · sin cuentas ni correos reales</span>${button("switchRole", teacher() ? "Ver como estudiante" : "Ver como docente")}</div>` : ""}<header class="topbar">${button("menu", icon("menu"), 'class="menu-button" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false"')}<div class="mobile-logo">${logo()}</div><div class="breadcrumb">Aula virtual <span aria-hidden="true">/</span> <strong>${escape(title)}</strong></div><div class="workspace-motion">${button("toggleMotion", icon(motionPaused ? "play" : "pause"), 'class="motion-button" aria-label="Pausar animaciones" aria-pressed="false"')}<div class="profile"><span class="name">${escape(name)}<br><small>${teacher() ? "Docente" : "Estudiante"}</small></span><span class="avatar">${escape(
     name
       .split(" ")
       .slice(0, 2)
       .map((s) => s[0])
       .join("")
       .toUpperCase(),
-  )}</span></div></header><main class="main" id="main" tabindex="-1">${content}<div class="footer-note"><span>SIGIN · Aula de aprendizaje práctico</span><span>La curiosidad es el comienzo. Tu constancia hace el resto.</span></div></main></div></div>`;
+  )}</span></div></div></header><main class="main" id="main" tabindex="-1">${content}<div class="footer-note"><span>SIGIN · Aula de aprendizaje práctico</span><span>La curiosidad es el comienzo. Tu constancia hace el resto.</span></div></main></div></div>`;
   focus();
+  const key = [route, currentCourse || "", adminTab, activityMode, app.querySelector("main h1")?.textContent || ""].join("|");
+  uiMotion.screenChanged("workspace", key);
+  updateMotionControl();
 }
 function login(error = "") {
   identity = null;
@@ -264,12 +273,13 @@ function login(error = "") {
   liveWorkspaceReady = false;
   quiz = null;
   route = "login";
-  stopLandingWaves();
+  clearScreenEffects();
   app.innerHTML = `<div class="landing-waves" aria-hidden="true"></div>${guestHeader(true)}<main class="landing" id="main" tabindex="-1"><section class="landing-story" aria-labelledby="landing-title"><div class="landing-copy"><span class="eyebrow">Aprender. Practicar. Avanzar.</span><h1 id="landing-title">Tu próximo paso<br><em>empieza aquí.</em></h1><p>Un espacio para conectar ideas y poner en práctica lo que aprendes. Encuentra tus materias y avanza, una semana a la vez.</p><div class="landing-values"><span>${icon("book")} Explora con calma</span><span>${icon("spark")} Aprende haciendo</span></div></div></section><section class="landing-login" aria-labelledby="login-title"><div class="login-panel"><span class="eyebrow">Acceso al aula</span><h2 id="login-title">Qué bueno verte.</h2><p class="muted">Ingresa para continuar con tu aprendizaje.</p><div class="role-switch" aria-label="Tipo de acceso">${button("loginRole", "Estudiante", `data-role="student" aria-pressed="${loginRole === "student"}" class="${loginRole === "student" ? "active" : ""}"`)}${button("loginRole", "Docente", `data-role="teacher" aria-pressed="${loginRole === "teacher"}" class="${loginRole === "teacher" ? "active" : ""}"`)}</div><form id="login-form"><label for="username">${loginRole === "teacher" ? "Usuario docente" : "Número de cédula"}</label><input id="username" name="username" autocomplete="username" ${loginRole === "student" ? 'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"' : 'value="DocenteULEAM"'} required placeholder="${loginRole === "student" ? "Tu cédula de diez dígitos" : "Usuario"}"><label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" required>${button("showPassword", icon("eye"), 'aria-label="Mostrar contraseña"')}</div><p class="error" id="login-error" role="alert">${escape(error)}</p><button type="submit" class="primary full">Entrar a mi aula ${icon("arrow")}</button></form><p class="login-help">${icon("shield")}${backendConfigured ? "Ingresa con tu cédula y contraseña. Si eres nuevo, usa tu cédula como clave temporal y cámbiala al entrar. Si necesitas ayuda, contacta a la docente." : "Tu aula estará disponible al conectar las cuentas institucionales."}</p>${APP_CONFIG.previewEnabled ? button("preview", "Explorar las tres materias", 'class="full"') : ""}</div><p class="landing-signoff">Aprender lleva tiempo. Cada paso cuenta.</p></section></main>`;
   landingWaves = createGradientWaves(app.querySelector(".landing-waves"), {
     paused: motionPaused,
     onStateChange: updateMotionControl,
   });
+  uiMotion.screenChanged("login", "login");
 }
 function enterPreview(role = "student") {
   if (!APP_CONFIG.previewEnabled)
@@ -961,9 +971,11 @@ function account() {
   );
 }
 function changePassword(required = false) {
-  stopLandingWaves();
+  clearScreenEffects();
   app.innerHTML = `${guestHeader()}<main class="access-page" id="main" tabindex="-1"><article class="card"><span class="eyebrow">Protege tu cuenta</span><h1>Elige tu nueva contraseña.</h1><p class="muted">${required ? "Antes de entrar, cambia la clave temporal. " : ""}Usa al menos doce caracteres y una contraseña distinta de tu cédula.</p><form id="password-form"><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label>Confirmar contraseña<input name="confirm" type="password" autocomplete="new-password" minlength="12" required></label><button type="submit" class="primary full">Guardar mi contraseña</button><p id="password-status" role="status"></p></form></article></main>`;
   focus();
+  uiMotion.screenChanged("password", "password");
+  updateMotionControl();
 }
 async function excel() {
   if (window.ExcelJS) return window.ExcelJS;
@@ -1118,6 +1130,9 @@ app.addEventListener("click", async (event) => {
         motionPaused = !motionPaused;
         try { localStorage.setItem(motionKey, String(motionPaused)); } catch {}
         landingWaves?.setPaused(motionPaused);
+        pointerEffects.setPaused(motionPaused);
+        uiMotion.setPaused(motionPaused);
+        updateMotionControl();
         break;
       case "settings":
         settings();
@@ -1166,9 +1181,13 @@ app.addEventListener("click", async (event) => {
       case "lesson":
         lesson(w);
         break;
-      case "menu":
-        document.querySelector("#sidebar").classList.toggle("open");
+      case "menu": {
+        const sidebar = document.querySelector("#sidebar");
+        const open = sidebar.classList.toggle("open");
+        b.setAttribute("aria-expanded", String(open));
+        if (open) uiMotion.openSidebar();
         break;
+      }
       case "switchRole":
         if (mode !== "preview" || !APP_CONFIG.previewEnabled)
           return toast(
