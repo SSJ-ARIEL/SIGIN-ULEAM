@@ -48,6 +48,8 @@ El usuario visible del estudiante y su contraseña temporal son su cédula. Supa
 
 Para suprimir también correos solicitados directamente a Auth, aplica `supabase/migrations/20261028_disable_auth_email.sql` y configura el hook Send Email mediante Management API: `hook_send_email_enabled: true`, `hook_send_email_uri: "pg-functions://postgres/public/sigin_suppress_auth_email"`. Desactiva todos los campos `mailer_notifications_*_enabled` y mantén `disable_signup: true`. El hook no entrega mensajes ni guarda su contenido. Verifica la configuración con una lectura administrativa y la función mediante SQL, sin invocar recuperación, OTP, invitaciones ni enviar correos de prueba. Estas operaciones no modifican usuarios, hashes, perfiles, matrículas ni notas.
 
+Verificación del 28 de octubre de 2026 en `safynzirineolyxeitqh`: migración de supresión aplicada, hook Send Email habilitado, registro público desactivado y siete avisos automáticos de Auth desactivados. Se comprobaron la respuesta vacía del hook y sus permisos mediante SQL, sin solicitar correos. Las huellas agregadas de cuentas Auth (incluidos sus hashes de contraseña), perfiles, matrículas, notas y bancos privados coincidieron antes y después. No se reinicializó la base de datos ni se cambiaron contraseñas existentes. Las pruebas del adaptador cubren el bloqueo del aula con contraseña temporal, el cambio mediante Auth y la conservación del bloqueo cuando Auth rechaza el cambio.
+
 Si se olvida una contraseña, se debe contactar a la docente para verificar la identidad y gestionar el acceso administrativamente.
 
 ## 4. Alta segura del único estudiante de prueba

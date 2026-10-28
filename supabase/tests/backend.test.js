@@ -106,6 +106,48 @@ test("login uses institutional email and authoritative server profile", async ()
   assert.equal(h.requests[1].headers.Authorization, "Bearer fixture-access");
 });
 
+test("temporary password blocks workspace until Auth confirms an in-app change", async () => {
+  let mustChange = true;
+  const h = await signedHarness((request) => {
+    if (request.url.includes("/profiles?")) {
+      const result = identity(request);
+      result.body[0].must_change_password = mustChange;
+      return result;
+    }
+    if (request.url.endsWith("/auth/v1/user") && request.method === "PUT") {
+      assert.deepEqual(request.body, { password: "fixture-new-password" });
+      mustChange = false; // Simulate the server's password_changed trigger.
+      return { body: { id: uuid } };
+    }
+  });
+  const workspace = await h.backend.loadWorkspace();
+  assert.equal(workspace.profile.must_change_password, true);
+  assert.deepEqual(workspace.courses, []);
+  assert.deepEqual(workspace.attempts, []);
+  assert.equal(h.requests.some((r) => r.url.includes("/courses?")), false);
+  await assert.rejects(h.backend.updatePassword(fixtureId), /doce caracteres/);
+  assert.equal(h.requests.some((r) => r.method === "PUT"), false);
+  const updated = await h.backend.updatePassword("fixture-new-password");
+  assert.equal(updated.profile.must_change_password, false);
+  assert.equal(h.requests.filter((r) => r.method === "PUT").length, 1);
+  assert.equal(h.requests.some((r) => /recover|invite|otp/.test(r.url)), false);
+});
+
+test("failed Auth password change keeps the temporary-password restriction", async () => {
+  const h = await signedHarness((request) => {
+    if (request.url.includes("/profiles?")) {
+      const result = identity(request);
+      result.body[0].must_change_password = true;
+      return result;
+    }
+    if (request.url.endsWith("/auth/v1/user") && request.method === "PUT")
+      return { status: 422, body: { message: "Password rejected" } };
+  });
+  await assert.rejects(h.backend.updatePassword("fixture-new-password"));
+  assert.equal((await h.backend.loadWorkspace()).profile.must_change_password, true);
+  assert.equal(h.requests.some((r) => r.url.includes("/courses?")), false);
+});
+
 test("a forged local session cannot authorize an account or keep its role", async () => {
   const h = await harness(() => ({
     status: 401,
