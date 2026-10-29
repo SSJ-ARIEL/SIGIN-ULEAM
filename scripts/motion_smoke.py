@@ -1,7 +1,9 @@
 """Exercise click sparks and navigation motion using only local account fixtures.
 
 The wave shader has its own background_smoke.py suite. Here WebGL is unavailable
-on purpose, so the 2D pointer/UI checks also cover the static-background fallback.
+on purpose, so the 2D pointer/UI checks also cover the static-background fallback
+and ordinary cursor when SwarmCursor cannot render. swarm_smoke.py exercises the
+actual swarm shader independently.
 """
 import os
 import re
@@ -100,7 +102,7 @@ with sync_playwright() as playwright:
     expect(page.locator("canvas.pointer-effects")).to_have_attribute("aria-hidden", "true")
     assert page.locator("canvas.pointer-effects").evaluate("element => getComputedStyle(element).pointerEvents") == "none"
 
-    # Moving the ordinary cursor must never paint a trail or keep an effect loop.
+    # Without WebGL, moving the ordinary cursor must not paint a substitute trail.
     page.mouse.move(680, 160)
     page.mouse.move(860, 180, steps=8)
     page.evaluate("""() => new Promise(resolve => requestAnimationFrame(

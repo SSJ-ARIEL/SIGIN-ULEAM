@@ -1,6 +1,7 @@
 import { courses } from "./courses.js";
 import { createGradientWaves } from "./gradient-waves.js";
 import { createPointerEffects } from "./pointer-effects.js";
+import { createSwarmCursor } from "./swarm-cursor.js";
 import { createUiMotion } from "./ui-motion.js";
 import { backend, backendConfigured, institutionalEmail } from "./backend.js";
 import { APP_CONFIG } from "./config.js";
@@ -80,6 +81,10 @@ const motionKey = "sigin-motion-paused-v1";
 let motionPaused = false;
 try { motionPaused = localStorage.getItem(motionKey) === "true"; } catch {}
 const pointerEffects = createPointerEffects({ paused: motionPaused });
+const swarmCursor = createSwarmCursor({
+  paused: motionPaused,
+  lightMode: document.documentElement.dataset.theme !== "dark",
+});
 const uiMotion = createUiMotion(app, { paused: motionPaused });
 function clearScreenEffects() {
   uiMotion.clearScreen();
@@ -108,6 +113,7 @@ function applyTheme(preference, persist = true) {
     : preference;
   document.documentElement.dataset.theme = theme;
   landingWaves?.setTheme(theme);
+  swarmCursor.setTheme(theme);
   document.documentElement.dataset.themePreference = preference;
   document.documentElement.style.colorScheme = theme;
   document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#1c1817" : "#f8f4ed";
@@ -1131,6 +1137,7 @@ app.addEventListener("click", async (event) => {
         try { localStorage.setItem(motionKey, String(motionPaused)); } catch {}
         landingWaves?.setPaused(motionPaused);
         pointerEffects.setPaused(motionPaused);
+        swarmCursor.setPaused(motionPaused);
         uiMotion.setPaused(motionPaused);
         updateMotionControl();
         break;

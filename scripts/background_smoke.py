@@ -47,6 +47,9 @@ def create_page(browser, *, reduced=False, no_webgl=False, preview=False):
     return context,page,errors
 
 def assert_stopped(page):
+    # The independent cursor swarm stays animated while the mouse is over the
+    # page. Leave the viewport before checking background/UI cleanup.
+    page.locator("html").dispatch_event("pointerleave")
     page.wait_for_function("window.__animationAudit.pending.size === 0")
     before=page.evaluate("window.__animationAudit.frames")
     page.wait_for_timeout(180)
